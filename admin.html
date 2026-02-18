@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <style>
+        body { font-family: sans-serif; background: #1e293b; color: #f8fafc; padding: 20px; }
+        .container { max-width: 900px; margin: auto; }
+        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #334155; border-radius: 8px; overflow: hidden; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #475569; }
+        th { background: #0f172a; color: #38bdf8; }
+        .status-badge { background: #059669; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; }
+        button { background: #ef4444; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px; }
+        
+        /* Tabs */
+        .tabs { display: flex; gap: 10px; margin: 20px 0; }
+        .tab-btn { background: #475569; padding: 10px 20px; border-radius: 6px; font-size: 1rem; }
+        .tab-btn.active { background: #2563eb; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        /* Product Form */
+        .product-form { background: #334155; padding: 25px; border-radius: 8px; margin-bottom: 20px; }
+        .form-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 15px; }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group.full { grid-column: span 2; }
+        label { color: #94a3b8; margin-bottom: 5px; font-size: 0.9rem; }
+        input, textarea { padding: 10px; border: 2px solid #475569; border-radius: 6px; background: #1e293b; color: #f8fafc; font-size: 1rem; }
+        input:focus, textarea:focus { outline: none; border-color: #38bdf8; }
+        textarea { resize: vertical; min-height: 80px; }
+        .btn-add { background: #059669; width: 100%; padding: 12px; font-size: 1rem; margin-top: 10px; }
+        .btn-add:hover { background: #047857; }
+        
+        /* Product Grid */
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+        .product-item { background: #334155; border-radius: 8px; overflow: hidden; }
+        .product-item img { width: 100%; height: 150px; object-fit: cover; }
+        .product-info { padding: 12px; }
+        .product-info h4 { margin: 0 0 5px 0; color: #38bdf8; }
+        .product-info p { margin: 0; color: #94a3b8; font-size: 0.85rem; }
+        .product-info .price { color: #4ade80; font-weight: bold; margin-top: 8px; }
+        .product-actions { display: flex; gap: 5px; margin-top: 10px; }
+        .product-actions button { flex: 1; font-size: 0.8rem; }
+        .btn-edit { background: #f59e0b; }
+        
+        /* Product Symbol Badge */
+        .symbol-badge { 
+            display: inline-block; 
+            background: #0891b2; 
+            color: white; 
+            padding: 4px 12px; 
+            border-radius: 20px; 
+            font-size: 0.8rem; 
+            margin-top: 5px;
+        }
+        
+        /* Image Modal - Fullscreen Display */
+        .image-modal { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0, 0, 0, 0.95); 
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .image-modal.active { display: flex; }
+        
+        .modal-content {
+            position: relative;
+            width: 90vw;
+            height: 90vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content img {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+        
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 40px;
+            color: #fff;
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.5);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s;
+        }
+        
+        .modal-close:hover { background: rgba(255, 0, 0, 0.7); }
+        
+        .product-item img {
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .product-item img:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Admin Dashboard</h1>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <span id="admin-name" style="color: #38bdf8;"></span>
+                <button onclick="clearAll()">Clear All Orders</button>
+                <button onclick="logout()" style="background: #475569;">Logout</button>
+            </div>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('orders')">Orders</button>
+            <button class="tab-btn" onclick="switchTab('products')">Products</button>
+        </div>
+
+        <!-- Orders Tab -->
+        <div id="orders-tab" class="tab-content active">
+        <table id="order-table">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Items</th>
+                    <th>Amount</th>
+                    <th>Date/Time</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="admin-tbody">
+                </tbody>
+        </table>
+        </div>
+
+        <!-- Products Tab -->
+        <div id="products-tab" class="tab-content">
+            <div class="product-form">
+                <h3 style="margin-top: 0; color: #38bdf8;">Add New Product</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Product Name</label>
+                        <input type="text" id="prod-name" placeholder="e.g. Wireless Mouse">
+                    </div>
+                    <div class="form-group">
+                        <label>Price ($)</label>
+                        <input type="number" id="prod-price" placeholder="e.g. 49.99" step="0.01" min="0">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group full">
+                        <label>Product Symbol (for access control)</label>
+                        <select id="prod-symbol" style="padding: 10px; border: 2px solid #475569; border-radius: 6px; background: #1e293b; color: #f8fafc; font-size: 1rem;">
+                            <option value="🚗-road">🚗 Road</option>
+                            <option value="🏠-home">🏠 Home</option>
+                            <option value="📱-electronics">📱 Electronics</option>
+                            <option value="⚙️-tools">⚙️ Tools</option>
+                            <option value="🎮-entertainment">🎮 Entertainment</option>
+                            <option value="👗-fashion">👗 Fashion</option>
+                            <option value="🍔-food">🍔 Food</option>
+                            <option value="📚-books">📚 Books</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group full">
+                        <label>Product Image (URL or Upload)</label>
+                        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                            <input type="url" id="prod-image" placeholder="https://example.com/image.jpg" style="flex: 1;">
+                            <input type="file" id="prod-image-file" accept="image/*" style="flex: 1;">
+                        </div>
+                        <small style="color: #94a3b8; display: block;">Use URL OR upload from local system (not both)</small>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group full">
+                        <label>Description</label>
+                        <textarea id="prod-desc" placeholder="Brief product description..."></textarea>
+                    </div>
+                </div>
+                <button class="btn-add" onclick="addProduct()">+ Add Product</button>
+            </div>
+
+            <h3 style="color: #94a3b8;">Current Products</h3>
+            <div id="product-grid" class="product-grid"></div>
+        </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div id="image-modal" class="image-modal" onclick="closeImageModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <img id="modal-image" src="" alt="Full view">
+            <button class="modal-close" onclick="closeImageModal()">×</button>
+        </div>
+    </div>
+
+    <script>
+        // Authentication Check - Admin Only
+        function checkAdminAuth() {
+            const session = JSON.parse(localStorage.getItem('ecom_session'));
+            if (!session) {
+                window.location.href = 'login.html';
+                return null;
+            }
+            if (session.role !== 'admin') {
+                alert('Access Denied! Admin privileges required.');
+                window.location.href = 'store.html';
+                return null;
+            }
+            return session;
+        }
+
+        function logout() {
+            localStorage.removeItem('ecom_session');
+            window.location.href = 'login.html';
+        }
+
+        // Check auth on page load
+        const currentAdmin = checkAdminAuth();
+        if (currentAdmin) {
+            document.getElementById('admin-name').textContent = `👤 ${currentAdmin.username}`;
+        }
+
+        // Tab switching
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tab + '-tab').classList.add('active');
+        }
+
+        // Product Management
+        function loadProducts() {
+            const grid = document.getElementById('product-grid');
+            const products = JSON.parse(localStorage.getItem('ecom_products')) || [];
+
+            if (products.length === 0) {
+                grid.innerHTML = '<p style="color: #64748b;">No products added yet. Add your first product above!</p>';
+                return;
+            }
+
+            grid.innerHTML = products.map((prod, index) => `
+                <div class="product-item">
+                    <img src="${prod.image}" alt="${prod.name}" onclick="openImageModal('${prod.image}')" onerror="this.src='https://via.placeholder.com/200x150?text=No+Image'">
+                    <div class="product-info">
+                        <h4>${prod.name}</h4>
+                        <p>${prod.description.substring(0, 50)}${prod.description.length > 50 ? '...' : ''}</p>
+                        <div class="price">$${prod.price.toFixed(2)}</div>
+                        <div class="symbol-badge">${prod.symbol || 'general'}</div>
+                        <div class="product-actions">
+                            <button class="btn-edit" onclick="editProduct(${index})">Edit</button>
+                            <button onclick="deleteProduct(${index})">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addProduct() {
+            const name = document.getElementById('prod-name').value.trim();
+            const price = parseFloat(document.getElementById('prod-price').value);
+            const urlImage = document.getElementById('prod-image').value.trim();
+            const fileInput = document.getElementById('prod-image-file');
+            const description = document.getElementById('prod-desc').value.trim();
+            const symbol = document.getElementById('prod-symbol').value;
+
+            if (!name || !price || !description) {
+                alert('Please fill in name, price, and description!');
+                return;
+            }
+
+            // Check if file is selected
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    saveProduct(name, price, e.target.result, description, symbol);
+                };
+                
+                reader.readAsDataURL(file);
+            } else if (urlImage) {
+                saveProduct(name, price, urlImage, description, symbol);
+            } else {
+                saveProduct(name, price, 'https://via.placeholder.com/200x150?text=' + encodeURIComponent(name), description, symbol);
+            }
+        }
+
+        function saveProduct(name, price, image, description, symbol) {
+            const products = JSON.parse(localStorage.getItem('ecom_products')) || [];
+            
+            products.push({
+                id: Date.now(),
+                name,
+                price,
+                image,
+                description,
+                symbol: symbol || 'general'
+            });
+
+            localStorage.setItem('ecom_products', JSON.stringify(products));
+            
+            // Clear form
+            document.getElementById('prod-name').value = '';
+            document.getElementById('prod-price').value = '';
+            document.getElementById('prod-image').value = '';
+            document.getElementById('prod-image-file').value = '';
+            document.getElementById('prod-desc').value = '';
+            
+            loadProducts();
+            alert('Product added successfully!');
+        }
+
+        function editProduct(index) {
+            const products = JSON.parse(localStorage.getItem('ecom_products')) || [];
+            const prod = products[index];
+            
+            const newName = prompt('Product Name:', prod.name);
+            if (newName === null) return;
+            
+            const newPrice = prompt('Price ($):', prod.price);
+            if (newPrice === null) return;
+            
+            const newImage = prompt('Image URL:', prod.image);
+            if (newImage === null) return;
+            
+            const newDesc = prompt('Description:', prod.description);
+            if (newDesc === null) return;
+
+            products[index] = {
+                ...prod,
+                name: newName || prod.name,
+                price: parseFloat(newPrice) || prod.price,
+                image: newImage || prod.image,
+                description: newDesc || prod.description
+            };
+
+            localStorage.setItem('ecom_products', JSON.stringify(products));
+            loadProducts();
+        }
+
+        function deleteProduct(index) {
+            if (!confirm('Delete this product?')) return;
+            
+            const products = JSON.parse(localStorage.getItem('ecom_products')) || [];
+            products.splice(index, 1);
+            localStorage.setItem('ecom_products', JSON.stringify(products));
+            loadProducts();
+        }
+
+        function loadOrders() {
+            const tbody = document.getElementById('admin-tbody');
+            const orders = JSON.parse(localStorage.getItem('shared_orders')) || [];
+
+            if (orders.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No orders yet...</td></tr>';
+                return;
+            }
+
+            // Sort newest first
+            orders.reverse();
+
+            tbody.innerHTML = orders.map(order => `
+                <tr>
+                    <td><strong>${order.id}</strong></td>
+                    <td>${order.items.join(', ')}</td>
+                    <td>$${order.amount}</td>
+                    <td>${order.date}</td>
+                    <td><span class="status-badge">${order.status}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        function clearAll() {
+            if(confirm("Delete all order history?")) {
+                localStorage.removeItem('shared_orders');
+                loadOrders();
+            }
+        }
+
+        // Auto-refresh every 5 seconds to simulate real-time
+        setInterval(loadOrders, 5000);
+        
+        // Initial load
+        window.onload = function() {
+            loadOrders();
+            loadProducts();
+        };
+
+        // Image Modal Functions
+        function openImageModal(imageSrc) {
+            const modal = document.getElementById('image-modal');
+            const modalImg = document.getElementById('modal-image');
+            modalImg.src = imageSrc;
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden'; // Prevent scrolling
+        }
+
+        function closeImageModal(event) {
+            if (event && event.target.id !== 'image-modal') return;
+            const modal = document.getElementById('image-modal');
+            modal.classList.remove('active');
+            document.body.style.overflow = 'auto'; // Restore scrolling
+        }
+
+        // Close modal on ESC key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeImageModal();
+            }
+        });
+    </script>
+</body>
+</html>

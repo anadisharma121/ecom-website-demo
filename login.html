@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            font-family: sans-serif; 
+            background: linear-gradient(135deg, #1e293b, #0f172a); 
+            min-height: 100vh; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            margin: 0;
+        }
+        .login-container { 
+            background: #334155; 
+            padding: 40px; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 400px;
+        }
+        h1 { 
+            color: #38bdf8; 
+            text-align: center; 
+            margin-bottom: 30px; 
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 25px;
+            background: #1e293b;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            color: #94a3b8;
+            transition: all 0.3s;
+            border: none;
+            background: transparent;
+            font-size: 1rem;
+        }
+        .tab.active {
+            background: #2563eb;
+            color: white;
+        }
+        .tab:hover:not(.active) {
+            background: #475569;
+        }
+        .form-group { margin-bottom: 20px; }
+        label { 
+            display: block; 
+            color: #cbd5e1; 
+            margin-bottom: 8px; 
+            font-size: 0.9rem;
+        }
+        input { 
+            width: 100%; 
+            padding: 12px 15px; 
+            border: 2px solid #475569; 
+            border-radius: 8px; 
+            background: #1e293b; 
+            color: #f8fafc;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        input:focus { 
+            outline: none; 
+            border-color: #38bdf8; 
+        }
+        .btn { 
+            width: 100%; 
+            padding: 14px; 
+            background: #2563eb; 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 1.1rem; 
+            cursor: pointer; 
+            transition: background 0.3s;
+            margin-top: 10px;
+        }
+        .btn:hover { background: #1d4ed8; }
+        .btn-register { background: #059669; }
+        .btn-register:hover { background: #047857; }
+        .message { 
+            text-align: center; 
+            padding: 10px; 
+            border-radius: 6px; 
+            margin-bottom: 15px;
+            display: none;
+        }
+        .message.error { 
+            background: #7f1d1d; 
+            color: #fecaca; 
+            display: block;
+        }
+        .message.success { 
+            background: #14532d; 
+            color: #bbf7d0; 
+            display: block;
+        }
+        .toggle-form {
+            text-align: center;
+            margin-top: 20px;
+            color: #94a3b8;
+        }
+        .toggle-form a {
+            color: #38bdf8;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .form-section { display: none; }
+        .form-section.active { display: block; }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1>Welcome</h1>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('login')">Login</button>
+            <button class="tab" onclick="switchTab('register')">Register</button>
+        </div>
+
+        <div id="message" class="message"></div>
+
+        <!-- Login Form -->
+        <div id="login-form" class="form-section active">
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="login-username" placeholder="Enter username">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="login-password" placeholder="Enter password">
+            </div>
+            <button class="btn" onclick="login()">Login</button>
+        </div>
+
+        <!-- Register Form -->
+        <div id="register-form" class="form-section">
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="reg-username" placeholder="Choose a username">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="reg-password" placeholder="Choose a password">
+            </div>
+            <div class="form-group">
+                <label>Confirm Password</label>
+                <input type="password" id="reg-confirm" placeholder="Confirm password">
+            </div>
+            <div class="form-group">
+                <label>Product Access (Select categories you can view)</label>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                    <label style="display: flex; align-items: center; gap: 5px; font-size: 0.9rem;">
+                        <input type="checkbox" value="🚗-road" class="symbol-checkbox"> 🚗 Road
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; font-size: 0.9rem;">
+                        <input type="checkbox" value="🏠-home" class="symbol-checkbox"> 🏠 Home
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; font-size: 0.9rem;">
+                        <input type="checkbox" value="📱-electronics" class="symbol-checkbox"> 📱 Electronics
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; font-size: 0.9rem;">
+                        <input type="checkbox" value="⚙️-tools" class="symbol-checkbox"> ⚙️ Tools
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; font-size: 0.9rem;">
+                        <input type="checkbox" value="🎮-entertainment" class="symbol-checkbox"> 🎮 Entertainment
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; font-size: 0.9rem;">
+                        <input type="checkbox" value="👗-fashion" class="symbol-checkbox"> 👗 Fashion
+                    </label>
+                </div>
+            </div>
+            <button class="btn btn-register" onclick="register()">Create Account</button>
+        </div>
+    </div>
+
+    <script>
+        // Initialize default admin if not exists
+        function initializeDefaults() {
+            const users = JSON.parse(localStorage.getItem('ecom_users')) || [];
+            const adminExists = users.some(u => u.role === 'admin');
+            
+            if (!adminExists) {
+                users.push({
+                    username: 'admin',
+                    password: 'admin123',
+                    role: 'admin'
+                });
+                localStorage.setItem('ecom_users', JSON.stringify(users));
+            }
+        }
+
+        function switchTab(tab) {
+            // Update tabs
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update forms
+            document.querySelectorAll('.form-section').forEach(f => f.classList.remove('active'));
+            document.getElementById(tab + '-form').classList.add('active');
+            
+            // Clear message
+            hideMessage();
+        }
+
+        function showMessage(text, type) {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.className = 'message ' + type;
+        }
+
+        function hideMessage() {
+            document.getElementById('message').className = 'message';
+        }
+
+        function login() {
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value;
+
+            if (!username || !password) {
+                showMessage('Please fill in all fields', 'error');
+                return;
+            }
+
+            const users = JSON.parse(localStorage.getItem('ecom_users')) || [];
+            const user = users.find(u => u.username === username && u.password === password);
+
+            if (!user) {
+                showMessage('Invalid username or password', 'error');
+                return;
+            }
+
+            // Store current session
+            const session = {
+                username: user.username,
+                role: user.role,
+                loginTime: new Date().toISOString()
+            };
+            localStorage.setItem('ecom_session', JSON.stringify(session));
+
+            showMessage('Login successful! Redirecting...', 'success');
+
+            // Redirect based on role
+            setTimeout(() => {
+                if (user.role === 'admin') {
+                    window.location.href = 'admin.html';
+                } else {
+                    window.location.href = 'store.html';
+                }
+            }, 1000);
+        }
+
+        function register() {
+            const username = document.getElementById('reg-username').value.trim();
+            const password = document.getElementById('reg-password').value;
+            const confirm = document.getElementById('reg-confirm').value;
+
+            if (!username || !password || !confirm) {
+                showMessage('Please fill in all fields', 'error');
+                return;
+            }
+
+            if (password !== confirm) {
+                showMessage('Passwords do not match', 'error');
+                return;
+            }
+
+            if (password.length < 4) {
+                showMessage('Password must be at least 4 characters', 'error');
+                return;
+            }
+
+            const users = JSON.parse(localStorage.getItem('ecom_users')) || [];
+            
+            // Check if username exists
+            if (users.some(u => u.username === username)) {
+                showMessage('Username already taken', 'error');
+                return;
+            }
+
+            // Get selected product symbols
+            const selectedSymbols = Array.from(document.querySelectorAll('.symbol-checkbox:checked'))
+                .map(checkbox => checkbox.value);
+
+            if (selectedSymbols.length === 0) {
+                showMessage('Please select at least one product category', 'error');
+                return;
+            }
+
+            // Add new user with product access symbols
+            users.push({ 
+                username, 
+                password, 
+                role: 'user',
+                symbols: selectedSymbols  // Store assigned symbols
+            });
+            localStorage.setItem('ecom_users', JSON.stringify(users));
+
+            showMessage('Account created! You can now login.', 'success');
+            
+            // Clear form and switch to login
+            document.getElementById('reg-username').value = '';
+            document.getElementById('reg-password').value = '';
+            document.getElementById('reg-confirm').value = '';
+            document.querySelectorAll('.symbol-checkbox').forEach(cb => cb.checked = false);
+            
+            setTimeout(() => {
+                document.querySelector('.tab').click();
+            }, 1500);
+        }
+
+        // Allow Enter key to submit
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                if (document.getElementById('login-form').classList.contains('active')) {
+                    login();
+                } else {
+                    register();
+                }
+            }
+        });
+
+        // Initialize on load
+        window.onload = function() {
+            initializeDefaults();
+            
+            // Check if already logged in
+            const session = JSON.parse(localStorage.getItem('ecom_session'));
+            if (session) {
+                if (session.role === 'admin') {
+                    window.location.href = 'admin.html';
+                } else {
+                    window.location.href = 'store.html';
+                }
+            }
+        };
+    </script>
+</body>
+</html>
