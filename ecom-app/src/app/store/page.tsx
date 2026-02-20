@@ -147,7 +147,7 @@ export default function StorePage() {
                 </p>
                 <div className="flex items-center justify-between">
                   <span className="text-xl font-bold text-emerald-600">
-                    ${product.price.toFixed(2)}
+                    £{product.price.toFixed(2)}
                   </span>
                   <button
                     onClick={() => handleAddToCart(product)}

@@ -43,6 +43,7 @@ export async function GET(req: NextRequest) {
       },
       orderBy: { createdAt: "desc" },
     });
+    // Orders already include deliveryAddress, poNumber, emailNotification from the model
 
     return NextResponse.json(orders);
   } catch (error) {
@@ -61,10 +62,14 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { items } = body;
+    const { items, deliveryAddress, poNumber, emailNotification } = body;
 
     if (!items || items.length === 0) {
       return NextResponse.json({ error: "Order must have items" }, { status: 400 });
+    }
+
+    if (!deliveryAddress) {
+      return NextResponse.json({ error: "Delivery address is required" }, { status: 400 });
     }
 
     const total = items.reduce(
@@ -77,6 +82,9 @@ export async function POST(req: NextRequest) {
       data: {
         userId: parseInt(session.user.id),
         total,
+        deliveryAddress,
+        poNumber: poNumber || null,
+        emailNotification: emailNotification || false,
         items: {
           create: items.map(
             (item: { productId: number; quantity: number; price: number }) => ({
@@ -95,6 +103,11 @@ export async function POST(req: NextRequest) {
         },
       },
     });
+
+    // If email notification is enabled, log it (integrate with email service in production)
+    if (emailNotification) {
+      console.log(`[Email Notification] Order #${order.id} confirmation email requested for user ${session.user.id}`);
+    }
 
     return NextResponse.json(order, { status: 201 });
   } catch (error) {

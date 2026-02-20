@@ -2,17 +2,115 @@
 
 import { useCart } from "@/context/CartContext";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { HiOutlineTrash, HiOutlineMinus, HiOutlinePlus } from "react-icons/hi";
 import { getPlaceholderImage } from "@/lib/placeholder";
+
+interface Address {
+  id: number;
+  label: string;
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+  country: string;
+  isDefault: boolean;
+}
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, clearCart, totalPrice } = useCart();
   const router = useRouter();
 
+  // Address state
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
+  const [showNewAddress, setShowNewAddress] = useState(false);
+  const [newAddress, setNewAddress] = useState({
+    label: "",
+    street: "",
+    city: "",
+    state: "",
+    zip: "",
+    country: "UK",
+    isDefault: false,
+  });
+
+  // PO Number state
+  const [poNumber, setPoNumber] = useState("");
+
+  // Email notification state
+  const [emailNotification, setEmailNotification] = useState(false);
+
+  useEffect(() => {
+    fetchAddresses();
+  }, []);
+
+  const fetchAddresses = async () => {
+    try {
+      const res = await fetch("/api/addresses");
+      const data = await res.json();
+      setAddresses(data);
+      // Auto-select default address
+      const defaultAddr = data.find((a: Address) => a.isDefault);
+      if (defaultAddr) setSelectedAddressId(defaultAddr.id);
+      else if (data.length > 0) setSelectedAddressId(data[0].id);
+    } catch (error) {
+      console.error("Failed to fetch addresses");
+    }
+  };
+
+  const saveNewAddress = async () => {
+    if (!newAddress.label || !newAddress.street || !newAddress.city || !newAddress.state || !newAddress.zip) {
+      toast.error("Please fill in all address fields");
+      return;
+    }
+    try {
+      const res = await fetch("/api/addresses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newAddress),
+      });
+      if (!res.ok) throw new Error("Failed to save address");
+      const saved = await res.json();
+      setAddresses((prev) => [...prev, saved]);
+      setSelectedAddressId(saved.id);
+      setShowNewAddress(false);
+      setNewAddress({ label: "", street: "", city: "", state: "", zip: "", country: "UK", isDefault: false });
+      toast.success("Address saved!");
+    } catch (error) {
+      toast.error("Failed to save address");
+    }
+  };
+
+  const deleteAddress = async (id: number) => {
+    try {
+      await fetch(`/api/addresses/${id}`, { method: "DELETE" });
+      setAddresses((prev) => prev.filter((a) => a.id !== id));
+      if (selectedAddressId === id) setSelectedAddressId(null);
+      toast.success("Address deleted");
+    } catch (error) {
+      toast.error("Failed to delete address");
+    }
+  };
+
+  const formatAddress = (addr: Address) =>
+    `${addr.street}, ${addr.city}, ${addr.state} ${addr.zip}, ${addr.country}`;
+
   const placeOrder = async () => {
     if (items.length === 0) {
       toast.error("Your cart is empty!");
+      return;
+    }
+
+    if (!selectedAddressId) {
+      toast.error("Please select a delivery address");
+      return;
+    }
+
+    const selectedAddr = addresses.find((a) => a.id === selectedAddressId);
+    if (!selectedAddr) {
+      toast.error("Please select a valid delivery address");
       return;
     }
 
@@ -26,6 +124,9 @@ export default function CartPage() {
             quantity: item.quantity,
             price: item.price,
           })),
+          deliveryAddress: formatAddress(selectedAddr),
+          poNumber: poNumber.trim() || null,
+          emailNotification,
         }),
       });
 
@@ -36,7 +137,9 @@ export default function CartPage() {
 
       const order = await res.json();
       clearCart();
-      toast.success(`Order #${order.id} placed successfully!`);
+      setPoNumber("");
+      setEmailNotification(false);
+      toast.success(`Order #${order.id} placed successfully!${emailNotification ? " Confirmation email will be sent." : ""}`);
       router.push("/store/orders");
     } catch (error: any) {
       toast.error(error.message || "Failed to place order");
@@ -95,7 +198,7 @@ export default function CartPage() {
                     {item.name}
                   </h3>
                   <p className="text-emerald-600 font-semibold">
-                    ${item.price.toFixed(2)}
+                    £{item.price.toFixed(2)}
                   </p>
                 </div>
 
@@ -122,7 +225,7 @@ export default function CartPage() {
                 </div>
 
                 <p className="text-right font-semibold text-slate-800 w-20">
-                  ${(item.price * item.quantity).toFixed(2)}
+                  £{(item.price * item.quantity).toFixed(2)}
                 </p>
 
                 <button
@@ -136,7 +239,194 @@ export default function CartPage() {
           </div>
 
           {/* Order Summary */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 space-y-4">
+            {/* Delivery Address */}
+            <div className="card p-6">
+              <h2 className="text-lg font-semibold text-slate-800 mb-4">
+                📍 Delivery Address
+              </h2>
+              {addresses.length > 0 && (
+                <div className="space-y-2 mb-3">
+                  {addresses.map((addr) => (
+                    <label
+                      key={addr.id}
+                      className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                        selectedAddressId === addr.id
+                          ? "border-emerald-500 bg-emerald-50"
+                          : "border-slate-200 hover:border-slate-300"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="address"
+                        checked={selectedAddressId === addr.id}
+                        onChange={() => setSelectedAddressId(addr.id)}
+                        className="mt-1 accent-emerald-600"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-sm text-slate-800">
+                            {addr.label}
+                          </span>
+                          {addr.isDefault && (
+                            <span className="text-xs bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">
+                              Default
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          {formatAddress(addr)}
+                        </p>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          deleteAddress(addr.id);
+                        }}
+                        className="p-1 text-slate-400 hover:text-red-500"
+                      >
+                        <HiOutlineTrash className="w-4 h-4" />
+                      </button>
+                    </label>
+                  ))}
+                </div>
+              )}
+              {!showNewAddress ? (
+                <button
+                  onClick={() => setShowNewAddress(true)}
+                  className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+                >
+                  + Add New Address
+                </button>
+              ) : (
+                <div className="space-y-3 border-t border-slate-200 pt-3">
+                  <input
+                    type="text"
+                    placeholder="Label (e.g. Home, Office)"
+                    value={newAddress.label}
+                    onChange={(e) =>
+                      setNewAddress({ ...newAddress, label: e.target.value })
+                    }
+                    className="input-field text-sm"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Street address"
+                    value={newAddress.street}
+                    onChange={(e) =>
+                      setNewAddress({ ...newAddress, street: e.target.value })
+                    }
+                    className="input-field text-sm"
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      placeholder="City"
+                      value={newAddress.city}
+                      onChange={(e) =>
+                        setNewAddress({ ...newAddress, city: e.target.value })
+                      }
+                      className="input-field text-sm"
+                    />
+                    <input
+                      type="text"
+                      placeholder="County"
+                      value={newAddress.state}
+                      onChange={(e) =>
+                        setNewAddress({ ...newAddress, state: e.target.value })
+                      }
+                      className="input-field text-sm"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      placeholder="Postcode"
+                      value={newAddress.zip}
+                      onChange={(e) =>
+                        setNewAddress({ ...newAddress, zip: e.target.value })
+                      }
+                      className="input-field text-sm"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Country"
+                      value={newAddress.country}
+                      onChange={(e) =>
+                        setNewAddress({ ...newAddress, country: e.target.value })
+                      }
+                      className="input-field text-sm"
+                    />
+                  </div>
+                  <label className="flex items-center gap-2 text-sm text-slate-600">
+                    <input
+                      type="checkbox"
+                      checked={newAddress.isDefault}
+                      onChange={(e) =>
+                        setNewAddress({ ...newAddress, isDefault: e.target.checked })
+                      }
+                      className="accent-emerald-600"
+                    />
+                    Set as default address
+                  </label>
+                  <div className="flex gap-2">
+                    <button onClick={saveNewAddress} className="btn-primary text-sm flex-1">
+                      Save Address
+                    </button>
+                    <button
+                      onClick={() => setShowNewAddress(false)}
+                      className="btn-secondary text-sm"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* PO Number & Email Notification */}
+            <div className="card p-6">
+              <h2 className="text-lg font-semibold text-slate-800 mb-4">
+                📋 Order Details
+              </h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    PO Number <span className="text-slate-400">(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter purchase order number"
+                    value={poNumber}
+                    onChange={(e) => setPoNumber(e.target.value)}
+                    className="input-field text-sm"
+                  />
+                </div>
+                <div className="border-t border-slate-200 pt-4">
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <div className="relative">
+                      <input
+                        type="checkbox"
+                        checked={emailNotification}
+                        onChange={(e) => setEmailNotification(e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-10 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-slate-700">
+                        Email Notification
+                      </span>
+                      <p className="text-xs text-slate-400">
+                        Receive order confirmation via email
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Price Summary */}
             <div className="card p-6 sticky top-24">
               <h2 className="text-lg font-semibold text-slate-800 mb-4">
                 Order Summary
@@ -151,7 +441,7 @@ export default function CartPage() {
                       {item.name} x{item.quantity}
                     </span>
                     <span className="text-slate-800 font-medium flex-shrink-0">
-                      ${(item.price * item.quantity).toFixed(2)}
+                      £{(item.price * item.quantity).toFixed(2)}
                     </span>
                   </div>
                 ))}
@@ -162,9 +452,24 @@ export default function CartPage() {
                     Total
                   </span>
                   <span className="text-lg font-bold text-emerald-600">
-                    ${totalPrice.toFixed(2)}
+                    £{totalPrice.toFixed(2)}
                   </span>
                 </div>
+                {poNumber.trim() && (
+                  <p className="text-xs text-slate-500 mt-2">
+                    PO#: {poNumber.trim()}
+                  </p>
+                )}
+                {selectedAddressId && (
+                  <p className="text-xs text-slate-500 mt-1">
+                    📍 {addresses.find((a) => a.id === selectedAddressId)?.label}
+                  </p>
+                )}
+                {emailNotification && (
+                  <p className="text-xs text-emerald-600 mt-1">
+                    ✉️ Email confirmation enabled
+                  </p>
+                )}
               </div>
               <button
                 onClick={placeOrder}

@@ -270,7 +270,7 @@ export default function AdminProducts() {
                 </p>
                 <div className="flex items-center justify-between">
                   <span className="text-lg font-bold text-emerald-600">
-                    ${product.price.toFixed(2)}
+                    £{product.price.toFixed(2)}
                   </span>
                   <div className="flex gap-1">
                     <button

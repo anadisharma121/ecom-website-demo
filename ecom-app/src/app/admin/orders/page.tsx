@@ -7,6 +7,9 @@ interface Order {
   id: number;
   total: number;
   status: string;
+  deliveryAddress: string | null;
+  poNumber: string | null;
+  emailNotification: boolean;
   createdAt: string;
   user: { username: string };
   items: {
@@ -145,6 +148,7 @@ export default function AdminOrders() {
               <th className="text-left px-5 py-3 text-sm font-medium text-slate-500">Customer</th>
               <th className="text-left px-5 py-3 text-sm font-medium text-slate-500">Items</th>
               <th className="text-left px-5 py-3 text-sm font-medium text-slate-500">Total</th>
+              <th className="text-left px-5 py-3 text-sm font-medium text-slate-500">Address / PO#</th>
               <th className="text-left px-5 py-3 text-sm font-medium text-slate-500">Status</th>
               <th className="text-left px-5 py-3 text-sm font-medium text-slate-500">Date</th>
               <th className="text-left px-5 py-3 text-sm font-medium text-slate-500">Action</th>
@@ -170,7 +174,26 @@ export default function AdminOrders() {
                     </div>
                   </td>
                   <td className="px-5 py-3 text-sm font-medium text-emerald-600">
-                    ${order.total.toFixed(2)}
+                    £{order.total.toFixed(2)}
+                  </td>
+                  <td className="px-5 py-3">
+                    <div className="max-w-xs">
+                      {order.deliveryAddress && (
+                        <div className="text-xs text-slate-500 truncate" title={order.deliveryAddress}>
+                          📍 {order.deliveryAddress}
+                        </div>
+                      )}
+                      {order.poNumber && (
+                        <div className="text-xs text-slate-500">
+                          📋 PO#: {order.poNumber}
+                        </div>
+                      )}
+                      {order.emailNotification && (
+                        <div className="text-xs text-emerald-600">
+                          ✉️ Email
+                        </div>
+                      )}
+                    </div>
                   </td>
                   <td className="px-5 py-3">
                     <span className={STATUS_COLORS[order.status] || "badge-blue"}>
@@ -178,7 +201,7 @@ export default function AdminOrders() {
                     </span>
                   </td>
                   <td className="px-5 py-3 text-sm text-slate-500">
-                    {new Date(order.createdAt).toLocaleString()}
+                    {new Date(order.createdAt).toLocaleString("en-GB")}
                   </td>
                   <td className="px-5 py-3">
                     <select
@@ -197,7 +220,7 @@ export default function AdminOrders() {
               ))
             ) : (
               <tr>
-                <td colSpan={7} className="px-5 py-12 text-center text-slate-400">
+                <td colSpan={8} className="px-5 py-12 text-center text-slate-400">
                   No orders found
                 </td>
               </tr>

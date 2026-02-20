@@ -199,7 +199,7 @@ export default function AdminUsers() {
                   </div>
                 </td>
                 <td className="px-5 py-3 text-sm text-slate-500">
-                  {new Date(user.createdAt).toLocaleDateString()}
+                  {new Date(user.createdAt).toLocaleDateString("en-GB")}
                 </td>
                 <td className="px-5 py-3">
                   {user.role !== "ADMIN" && (

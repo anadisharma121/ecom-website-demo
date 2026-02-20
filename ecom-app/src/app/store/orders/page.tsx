@@ -7,6 +7,9 @@ interface Order {
   id: number;
   total: number;
   status: string;
+  deliveryAddress: string | null;
+  poNumber: string | null;
+  emailNotification: boolean;
   createdAt: string;
   updatedAt: string;
   items: {
@@ -75,26 +78,46 @@ export default function OrdersPage() {
           {orders.map((order) => (
             <div key={order.id} className="card overflow-hidden">
               {/* Order Header */}
-              <div className="p-5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <span className="font-semibold text-slate-800">
-                    Order #{order.id}
-                  </span>
-                  <span className="text-sm text-slate-500 ml-3">
-                    {new Date(order.createdAt).toLocaleString()}
-                  </span>
+              <div className="p-5 bg-slate-50 border-b border-slate-200">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <span className="font-semibold text-slate-800">
+                      Order #{order.id}
+                    </span>
+                    <span className="text-sm text-slate-500 ml-3">
+                      {new Date(order.createdAt).toLocaleString("en-GB")}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${
+                        STATUS_COLORS[order.status] || "bg-slate-100 text-slate-600"
+                      }`}
+                    >
+                      {order.status}
+                    </span>
+                    <span className="text-lg font-bold text-emerald-600">
+                      £{order.total.toFixed(2)}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span
-                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${
-                      STATUS_COLORS[order.status] || "bg-slate-100 text-slate-600"
-                    }`}
-                  >
-                    {order.status}
-                  </span>
-                  <span className="text-lg font-bold text-emerald-600">
-                    ${order.total.toFixed(2)}
-                  </span>
+                {/* Order Meta Info */}
+                <div className="flex flex-wrap gap-4 mt-2">
+                  {order.deliveryAddress && (
+                    <span className="text-xs text-slate-500">
+                      📍 {order.deliveryAddress}
+                    </span>
+                  )}
+                  {order.poNumber && (
+                    <span className="text-xs text-slate-500">
+                      📋 PO#: {order.poNumber}
+                    </span>
+                  )}
+                  {order.emailNotification && (
+                    <span className="text-xs text-emerald-600">
+                      ✉️ Email notification enabled
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -170,7 +193,7 @@ export default function OrdersPage() {
                       </span>
                       <span className="text-slate-500">x{item.quantity}</span>
                       <span className="font-medium text-slate-800">
-                        ${(item.price * item.quantity).toFixed(2)}
+                        £{(item.price * item.quantity).toFixed(2)}
                       </span>
                     </div>
                   ))}

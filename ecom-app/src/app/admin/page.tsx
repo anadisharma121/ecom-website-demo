@@ -6,7 +6,7 @@ import {
   HiOutlineUsers,
   HiOutlineClipboardList,
   HiOutlineTag,
-  HiOutlineCurrencyDollar,
+  HiOutlineCurrencyPound,
 } from "react-icons/hi";
 
 interface DashboardStats {
@@ -73,8 +73,8 @@ export default function AdminDashboard() {
     },
     {
       label: "Total Revenue",
-      value: `$${(stats?.totalRevenue || 0).toFixed(2)}`,
-      icon: HiOutlineCurrencyDollar,
+      value: `£${(stats?.totalRevenue || 0).toFixed(2)}`,
+      icon: HiOutlineCurrencyPound,
       color: "bg-rose-500",
     },
   ];
@@ -155,13 +155,13 @@ export default function AdminDashboard() {
                       {order._count?.items || 0} items
                     </td>
                     <td className="px-5 py-3 text-sm font-medium text-emerald-600">
-                      ${order.total.toFixed(2)}
+                      £{order.total.toFixed(2)}
                     </td>
                     <td className="px-5 py-3">
                       <StatusBadge status={order.status} />
                     </td>
                     <td className="px-5 py-3 text-sm text-slate-500">
-                      {new Date(order.createdAt).toLocaleDateString()}
+                      {new Date(order.createdAt).toLocaleDateString("en-GB")}
                     </td>
                   </tr>
                 ))
