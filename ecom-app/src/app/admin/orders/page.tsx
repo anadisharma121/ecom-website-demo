@@ -9,6 +9,7 @@ interface Order {
   status: string;
   deliveryAddress: string | null;
   poNumber: string | null;
+  customerEmail: string | null;
   emailNotification: boolean;
   createdAt: string;
   user: { username: string };
@@ -188,9 +189,9 @@ export default function AdminOrders() {
                           📋 PO#: {order.poNumber}
                         </div>
                       )}
-                      {order.emailNotification && (
-                        <div className="text-xs text-emerald-600">
-                          ✉️ Email
+                      {order.emailNotification && order.customerEmail && (
+                        <div className="text-xs text-emerald-600" title={order.customerEmail}>
+                          ✉️ {order.customerEmail}
                         </div>
                       )}
                     </div>

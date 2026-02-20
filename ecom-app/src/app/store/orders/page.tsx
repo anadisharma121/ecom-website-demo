@@ -9,6 +9,7 @@ interface Order {
   status: string;
   deliveryAddress: string | null;
   poNumber: string | null;
+  customerEmail: string | null;
   emailNotification: boolean;
   createdAt: string;
   updatedAt: string;
@@ -113,9 +114,9 @@ export default function OrdersPage() {
                       📋 PO#: {order.poNumber}
                     </span>
                   )}
-                  {order.emailNotification && (
+                  {order.emailNotification && order.customerEmail && (
                     <span className="text-xs text-emerald-600">
-                      ✉️ Email notification enabled
+                      ✉️ Updates to {order.customerEmail}
                     </span>
                   )}
                 </div>

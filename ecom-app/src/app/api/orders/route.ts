@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { sendOrderConfirmationEmail } from "@/lib/email";
 
 // GET /api/orders - Get orders
 export async function GET(req: NextRequest) {
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { items, deliveryAddress, poNumber, emailNotification } = body;
+    const { items, deliveryAddress, poNumber, customerEmail } = body;
 
     if (!items || items.length === 0) {
       return NextResponse.json({ error: "Order must have items" }, { status: 400 });
@@ -70,6 +71,10 @@ export async function POST(req: NextRequest) {
 
     if (!deliveryAddress) {
       return NextResponse.json({ error: "Delivery address is required" }, { status: 400 });
+    }
+
+    if (!customerEmail) {
+      return NextResponse.json({ error: "Email address is required" }, { status: 400 });
     }
 
     const total = items.reduce(
@@ -84,7 +89,8 @@ export async function POST(req: NextRequest) {
         total,
         deliveryAddress,
         poNumber: poNumber || null,
-        emailNotification: emailNotification || false,
+        customerEmail,
+        emailNotification: true,
         items: {
           create: items.map(
             (item: { productId: number; quantity: number; price: number }) => ({
@@ -104,10 +110,17 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // If email notification is enabled, log it (integrate with email service in production)
-    if (emailNotification) {
-      console.log(`[Email Notification] Order #${order.id} confirmation email requested for user ${session.user.id}`);
-    }
+    // Send order confirmation email
+    sendOrderConfirmationEmail({
+      orderId: order.id,
+      customerEmail,
+      customerName: session.user.name,
+      items: order.items,
+      total: order.total,
+      deliveryAddress: order.deliveryAddress,
+      poNumber: order.poNumber,
+      createdAt: order.createdAt,
+    }).catch((err) => console.error("[Email] Background send failed:", err));
 
     return NextResponse.json(order, { status: 201 });
   } catch (error) {

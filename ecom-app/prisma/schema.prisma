@@ -94,6 +94,7 @@ model Order {
   status            OrderStatus @default(PENDING)
   deliveryAddress   String?
   poNumber          String?
+  customerEmail     String?
   emailNotification Boolean     @default(false)
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt

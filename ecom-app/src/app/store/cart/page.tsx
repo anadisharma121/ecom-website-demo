@@ -39,8 +39,8 @@ export default function CartPage() {
   // PO Number state
   const [poNumber, setPoNumber] = useState("");
 
-  // Email notification state
-  const [emailNotification, setEmailNotification] = useState(false);
+  // Email state
+  const [customerEmail, setCustomerEmail] = useState("");
 
   useEffect(() => {
     fetchAddresses();
@@ -103,6 +103,17 @@ export default function CartPage() {
       return;
     }
 
+    if (!customerEmail.trim()) {
+      toast.error("Please enter your email address");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(customerEmail.trim())) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
     if (!selectedAddressId) {
       toast.error("Please select a delivery address");
       return;
@@ -126,7 +137,7 @@ export default function CartPage() {
           })),
           deliveryAddress: formatAddress(selectedAddr),
           poNumber: poNumber.trim() || null,
-          emailNotification,
+          customerEmail: customerEmail.trim(),
         }),
       });
 
@@ -138,8 +149,8 @@ export default function CartPage() {
       const order = await res.json();
       clearCart();
       setPoNumber("");
-      setEmailNotification(false);
-      toast.success(`Order #${order.id} placed successfully!${emailNotification ? " Confirmation email will be sent." : ""}`);
+      setCustomerEmail("");
+      toast.success(`Order #${order.id} placed! Confirmation email sent to ${customerEmail.trim()}`);
       router.push("/store/orders");
     } catch (error: any) {
       toast.error(error.message || "Failed to place order");
@@ -384,12 +395,28 @@ export default function CartPage() {
               )}
             </div>
 
-            {/* PO Number & Email Notification */}
+            {/* PO Number & Email */}
             <div className="card p-6">
               <h2 className="text-lg font-semibold text-slate-800 mb-4">
                 📋 Order Details
               </h2>
               <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Email Address <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="you@example.com"
+                    value={customerEmail}
+                    onChange={(e) => setCustomerEmail(e.target.value)}
+                    className="input-field text-sm"
+                    required
+                  />
+                  <p className="text-xs text-slate-400 mt-1">
+                    Order confirmation and status updates will be sent here
+                  </p>
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
                     PO Number <span className="text-slate-400">(optional)</span>
@@ -401,27 +428,6 @@ export default function CartPage() {
                     onChange={(e) => setPoNumber(e.target.value)}
                     className="input-field text-sm"
                   />
-                </div>
-                <div className="border-t border-slate-200 pt-4">
-                  <label className="flex items-center gap-3 cursor-pointer group">
-                    <div className="relative">
-                      <input
-                        type="checkbox"
-                        checked={emailNotification}
-                        onChange={(e) => setEmailNotification(e.target.checked)}
-                        className="sr-only peer"
-                      />
-                      <div className="w-10 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-slate-700">
-                        Email Notification
-                      </span>
-                      <p className="text-xs text-slate-400">
-                        Receive order confirmation via email
-                      </p>
-                    </div>
-                  </label>
                 </div>
               </div>
             </div>
@@ -465,9 +471,9 @@ export default function CartPage() {
                     📍 {addresses.find((a) => a.id === selectedAddressId)?.label}
                   </p>
                 )}
-                {emailNotification && (
+                {customerEmail.trim() && (
                   <p className="text-xs text-emerald-600 mt-1">
-                    ✉️ Email confirmation enabled
+                    ✉️ {customerEmail.trim()}
                   </p>
                 )}
               </div>
